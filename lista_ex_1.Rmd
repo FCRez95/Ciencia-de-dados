@@ -1,0 +1,474 @@
+---
+title: "Lista de Exercícios 1"
+output: html_notebook
+---
+
+#####################################################
+###############     PARTE 1     #####################
+#####################################################
+
+Exercício 1:
+
+
+a) Construa um novo tibble no qual todas as variáveis sejam disponibilizadas em número índice, assumindo valor 100 no primeiro trimestre do ano 2000 (ie 2010Q1 = 100). 
+
+
+#Importing data to RStudio
+```{r}
+  load("us_change.rda")
+  work_data <- us_change
+```
+
+#Transforming variables into indice number 
+```{r}
+  work_data.indice <- work_data
+
+  work_data.indice$Consumption[121] <-  100;
+  work_data.indice$Income[121] <-  100;
+  work_data.indice$Production[121] <-  100;
+  work_data.indice$Savings[121] <-  100;
+  work_data.indice$Unemployment[121] <-  100;
+
+  #transforming data of years after 2000  
+  for(i in 122:length(work_data.indice$Consumption)){
+
+    work_data.indice$Consumption[i] <-  (1 + work_data.indice$Consumption[i]/100) * work_data.indice$Consumption[i-1];
+    work_data.indice$Income[i] <-  (1 + work_data.indice$Income[i]/100) * work_data.indice$Income[i-1];
+    work_data.indice$Production[i] <-  (1 + work_data.indice$Production[i]/100) * work_data.indice$Production[i-1];
+    work_data.indice$Savings[i] <-  (1 + work_data.indice$Savings[i]/100) * work_data.indice$Savings[i-1];
+    work_data.indice$Unemployment[i] <-  (1 + work_data.indice$Unemployment[i]/100) * work_data.indice$Unemployment[i-1];
+  }
+  
+  #transforming data of years before 2000
+  for(i in 120:1){
+
+    work_data.indice$Consumption[i] <-  work_data.indice$Consumption[i+1] / (1 + work_data$Consumption[i+1]/100);
+    work_data.indice$Income[i] <-  work_data.indice$Income[i+1] / (1 + work_data$Income[i+1]/100);
+    work_data.indice$Production[i] <-  work_data.indice$Production[i+1] / (1 + work_data$Production[i+1]/100);
+    work_data.indice$Savings[i] <-  work_data.indice$Savings[i+1] / (1 + work_data$Savings[i+1]/100);
+    work_data.indice$Unemployment[i] <-  work_data.indice$Unemployment[i+1] / (1 + work_data$Unemployment[i+1]/100);
+  }
+  
+```
+
+
+
+
+____________________________________________________________________________________________________________
+
+
+
+
+b) Explore a correlação entre as variáveis. Qual a diferença entre se calcular a correlação das variáveis em número índice e em taxa de variação? 
+
+
+#Using 'cor' function for checking correlation between variables in variation 
+```{r, echo = FALSE}
+library(dplyr)
+correlation_tax <-  cor(work_data %>% 
+      select(-"Quarter")) %>% round(2) 
+
+print(correlation_tax)
+```
+
+
+#Ploting correlation by variation
+```{r, echo=FALSE}
+
+corrplot::corrplot(correlation_tax, 
+                   type = "upper",
+                   tl.col = "black",
+                   )
+```
+
+
+
+#Using 'cor' function for checking correlation between variables in indice number
+```{r, echo = FALSE}
+correlation <-  cor(work_data.indice %>% 
+      select(-"Quarter")) %>% round(2) 
+
+print(correlation)
+```
+
+
+#Ploting correlation by indice
+```{r, echo=FALSE}
+
+corrplot::corrplot(correlation, 
+                   type = "upper",
+                   tl.col = "black",
+                   )
+```
+
+
+
+RESPOSTA: 
+Pode-se perceber que ao se calcular a correlação entre as variáveis em número indice é mais fácil de identificar a correlação entre variáveis. Imagino que isso se aconteça pelo fato de que quando se usa o número indice as taxas de variação estão relacionadas a a um número absoluto variando em relação ao tempo. Diferentemente de quando se tem a variação em porcentgem, que representa uma variação apenas em relação ao ultimo resultado apresentado pela variável, dificultando a analise para um longo período de tempo e portando a análise da corelação entre variáveis.
+
+
+
+
+__________________________________________________________________________________________________________
+
+
+
+
+c) Construa gráﬁcos que contribuam em seu entendimento sobre a dinâmica de cada variável do dataset, bem como as relações entre elas. Assim, por exemplo, como ponto de partida plote gráﬁcos de dispersão conjunta das variáveis, bem como suas evoluções ao longo do tempo. Sinta-se livre para complementar tal caracterização com todo e qualquer arsenal analítico que julgue interessante. 
+
+
+#Generating graphs for analysis
+```{r}
+library(ggplot2)
+library(tidyr)
+work_data.indice %>% 
+  ggplot( aes(x = Quarter, y = Consumption) ) +
+  geom_line()
+
+work_data.indice %>% 
+  ggplot( aes(x = Quarter, y = Income) ) +
+  geom_line()
+
+work_data.indice %>% 
+  ggplot( aes(x = Quarter, y = Production) ) +
+  geom_line()
+
+work_data.indice %>% 
+  ggplot( aes(x = Quarter, y = Savings) ) +
+  geom_line()
+
+work_data.indice %>% 
+  ggplot( aes(x = Quarter, y = Unemployment) ) +
+  geom_line()
+
+work_data.indice %>% 
+  ggplot( aes(x = Quarter, 
+              y = Consumption,
+              color = Production,
+              size = Income) ) +
+  geom_point()
+
+
+work_data.plot <-  work_data.indice %>% 
+  pivot_longer(
+    cols =  work_data.indice %>% 
+      select(-Quarter) %>% 
+      colnames()
+  )
+
+work_data.plot %>% 
+  filter( name %in% c("Consumption", "Income", "Production", "Unemployment", "Savings")) %>% 
+  ggplot( aes(x = Quarter, y = value, color = name)) +
+  geom_line() +
+  theme_bw()
+
+
+```
+
+
+
+
+__________________________________________________________________________________________________________
+
+
+
+
+d) A partir das visualizações obtidas no item anterior, que tipo de aprendizado você consegue extrair acerca de (i) evoluçãodas variáveis ao longo do tempo e (ii) das correlações nas dinâmicas das diversas variáveis?
+
+
+RESPOSTA: 
+i) Com base nos gráficos do item anterior verifica-se que ao longo do tempo existe uma evolução constante em 3 variáveis: Consumo (Consumptions), Renda (Income) e Produção (Production). O Desemprego (Unemployment), apesar de apresentar uma variação periodica, na média, se mantem constante. Sobre a Poupança (Savings) nota-se grandes variações de altos e baixos ao longo do tempo e eu não identifiquei nenhuma relação com as variações das outras variáveis.
+
+ii) Alem dos gráficos anteriores, tambem com base no cálculo de correlações do item 'b' percebe-se que existe uma forte correlação entre as variáveis Consumo (Consumption), Renda (Income) e Produção (Production).
+
+
+
+
+__________________________________________________________________________________________________________
+
+
+
+
+e) Você consegue identiﬁcar, visualmente, alguns movimentos bruscos/atípicos/anômalos na evolução das séries? Tente destacar tais pontos nos gráﬁcos construídos
+
+
+RESPOSTA:
+Dentro dos padrões que foram observados nas variáveis o movimento representado abaixo foi o mais chamou atenção como uma brusca mudança na progreção. Existem outras mudanças bruscas presentes nas progreções de outras variáveis (Savings por exemplo apresenta um gráfico repleto de mudanças), porém estas estão presentes em variáveis em que não se observa uma progreção constante como a variável Production.
+
+```{r}
+  work_data.indice %>% 
+    ggplot( aes(x = Quarter, y = Production) ) +
+    geom_line() +
+    geom_rect(
+      xmin = as.Date("2007-10-01"),
+      xmax = as.Date("2009-04-01"),
+      ymin = -Inf,
+      ymax = Inf,
+      fill = "yellow",
+      alpha = 0.01
+    ) 
+```
+
+
+
+
+__________________________________________________________________________________________________________
+__________________________________________________________________________________________________________
+
+
+
+
+Exercício 2:
+
+
+
+a) Leia os dados contidos no arquivo "retail.xlsx". Qual cuidado adicional você precisou ter ao realizar essa importação? 
+
+#Importing retail data 
+```{r}
+  data_retail <- readxl::read_excel(
+    path="./retail.xlsx",
+    range="A2:GH383") %>% 
+  janitor::clean_names() %>% 
+  dplyr::rename(date = colnames(.)[1] )
+  
+  str(data_retail)
+```
+
+RESPOSTA: 
+O cuidado adicional foi com o nome das colunas,especificando o 'range' para que a data seja importada de forma certa e usando a função janitor para transformar os nomes em um formato padrão que não cause problemas em futuros comandos. Um cuidado extra é usar a função 'str' para checar se todas as variáveis estão em no formato certo.
+
+
+
+
+__________________________________________________________________________________________________________
+
+
+
+
+b) Selecione uma das variáveis e as converta para o formato "time series"
+
+#Transforming selected column into a time series object
+```{r}
+  library(magrittr)
+  library(dplyr)
+  supermkt_groceries.ts <- data_retail %>% 
+    select(c("a3349335t")) %>% 
+    ts(
+      start = c(
+        lubridate::year(dplyr::first(data_retail$date)),
+        lubridate::month(dplyr::first(data_retail$date))
+      ),
+    
+    end = c(
+      lubridate::year(dplyr::last(data_retail$date)), 
+      lubridate::month(dplyr::last(data_retail$date))
+    ),
+    
+    frequency = 12
+  )
+  
+  values.sa <- seasonal::seas(x = supermkt_groceries.ts) %>% 
+    seasonal::final()
+  
+   p <- tibble::tibble(
+    date = data_retail$date, 
+    values.sa = values.sa %>% as.numeric(),
+    values.original = supermkt_groceries.ts %>% as.numeric()
+  ) %>% 
+    tidyr::pivot_longer(
+      cols = c("values.original", "values.sa")
+    ) %>% 
+    ggplot(aes(x = date, y = value, color = name, linetype = name)) +
+    geom_line()
+
+```
+
+
+
+
+__________________________________________________________________________________________________________
+
+
+
+
+c)Explore a série escolhida por meio da construção de gráﬁcos. Em particular, se estiver utilizando o R,teste as funções ggseasonplot e ggmonthplot. O que você consegue identiﬁcar em termos de ciclo, sazonalidade e tendência? 
+
+#Ploting basic graphics of the time series
+```{r}
+  require(ggplot2)
+  library(ggfortify)
+  library(seasonal)
+  
+  plot(supermkt_groceries.ts)
+  supermkt_groceries.ts %>% decompose %>% plot 
+  
+```
+
+RESPOSTA:
+De acordo com os gráficos nota-se uma tendencia de aumento nas vendas de supermarkets e grocery stores. Existe tambem um ciclo anual em que se nota uma sazonalidade de pico de vendas em dezembro seguido por uma queda brusca que acontece até o mês de fevereiro, atingindo o ponto mais baixo nas vendas durante o ano.
+
+
+
+
+__________________________________________________________________________________________________________
+
+
+
+
+d) Decomponha a série utilizando o método X11. Ele revela algum outlier ou padrões anômalos não identiﬁcados anteriormente?
+
+#Applying x11 method for more detailed exploration
+```{r}
+values.sa <- seasonal::seas(x = supermkt_groceries.ts, x11="") %>% 
+   seasonal::final()
+  
+p <- tibble::tibble(
+    date = data_retail$date, 
+    values.sa = values.sa %>% as.numeric(),
+    values.original = supermkt_groceries.ts %>% as.numeric()
+) %>% 
+    tidyr::pivot_longer(
+      cols = c("values.original", "values.sa")
+    ) %>% 
+      ggplot(aes(x = date, y = value, color = name, linetype = name)) +
+      geom_line()
+
+plotly::ggplotly(p)
+
+```
+
+RESPOSTA: 
+De acordo com o gráfico, não se apresentam nenhum outliers ou padrões anômalos.
+
+
+
+
+__________________________________________________________________________________________________________
+__________________________________________________________________________________________________________
+__________________________________________________________________________________________________________
+
+
+
+
+#####################################################
+###############     PARTE 2     #####################
+#####################################################
+
+Exercício 3:
+
+
+a) Use e abuse de todo o ferramental aprendido (e também do que será aprendido, por ventura, em consultas ao Google). A avaliação será feita tanto em cima da riqueza do código em si (em termos do ferramental usado) quanto do aprofundamento analítico na exploração dos dados e obtenção de informações e relações úteis.
+
+#Importing spotify data
+```{r}
+spotify_songs <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-01-21/spotify_songs.csv')
+```
+
+
+#Separating numeric info
+```{r}
+  numeric_data <- spotify_songs[, c("track_popularity", "danceability", "energy", "key", "loudness", "mode", "speechiness", "acousticness", "instrumentalness", "liveness", "valence", "tempo", "duration_ms")] 
+```
+
+
+#Checking general variables correlations
+```{r}
+  correlation <-  cor(numeric_data %>% 
+      select(-"track_popularity")) %>% round(2) 
+
+print(correlation)
+
+corrplot::corrplot(correlation, 
+                   type = "upper",
+                   tl.col = "black",
+                   )
+```
+
+
+#Generating dataset by genre
+```{r}
+pop_music <- spotify_songs[c(1:5507), c("track_popularity", "danceability", "energy", "key", "loudness", "mode", "speechiness", "acousticness", "instrumentalness", "liveness", "valence", "tempo", "duration_ms")]
+
+rap_music <- spotify_songs[c(5508:11253), c("track_popularity", "danceability", "energy", "key", "loudness", "mode", "speechiness", "acousticness", "instrumentalness", "liveness", "valence", "tempo", "duration_ms")]
+
+rock_music <- spotify_songs[c(11254:16204), c("track_popularity", "danceability", "energy", "key", "loudness", "mode", "speechiness", "acousticness", "instrumentalness", "liveness", "valence", "tempo", "duration_ms")]
+
+latin_music <- spotify_songs[c(16205: 21359), c("track_popularity", "danceability", "energy", "key", "loudness", "mode", "speechiness", "acousticness", "instrumentalness", "liveness", "valence", "tempo", "duration_ms")]
+
+rb_music <- spotify_songs[c(21360:26791), c("track_popularity", "danceability", "energy", "key", "loudness", "mode", "speechiness", "acousticness", "instrumentalness", "liveness", "valence", "tempo", "duration_ms")]
+
+edm_music <- spotify_songs[c(26792:32833), c("track_popularity", "danceability", "energy", "key", "loudness", "mode", "speechiness", "acousticness", "instrumentalness", "liveness", "valence", "tempo", "duration_ms")]
+```
+
+
+#Checking varible correlations by genre
+
+```{r}
+
+#Calculating correlations
+correlation_pop <-cor(pop_music %>% 
+  select(-"track_popularity")) %>% round(2) 
+correlation_pop2 <-cor(pop_music %>% 
+  select(-"key")) %>% round(2) 
+
+correlation_rap<- cor(rap_music %>% 
+  select(-"track_popularity")) %>% round(2) 
+
+correlation_rock<- cor(rock_music %>% 
+  select(-"track_popularity")) %>% round(2) 
+
+correlation_latin<- cor(latin_music %>% 
+  select(-"track_popularity")) %>% round(2) 
+
+correlation_rb<- cor(rb_music %>% 
+  select(-"track_popularity")) %>% round(2) 
+
+correlation_edm<- cor(edm_music %>% 
+  select(-"track_popularity")) %>% round(2) 
+
+
+#Ploting correlations
+corrplot::corrplot(correlation_pop, 
+                   type = "upper",
+                   tl.col = "black",
+                   title = "POP"
+                   )
+
+corrplot::corrplot(correlation_pop2, 
+                   type = "upper",
+                   tl.col = "black",
+                   title = "POP"
+                   )
+
+corrplot::corrplot(correlation_rap, 
+                   type = "upper",
+                   tl.col = "black",
+                   title = "RAP"
+                   )
+
+corrplot::corrplot(correlation_rock, 
+                   type = "upper",
+                   tl.col = "black",
+                   title = "ROCK"
+                   )
+
+corrplot::corrplot(correlation_latin, 
+                   type = "upper",
+                   tl.col = "black",
+                   title = "LATIN"
+                   )
+
+corrplot::corrplot(correlation_rb, 
+                   type = "upper",
+                   tl.col = "black",
+                   title = "RB"
+                   )
+
+corrplot::corrplot(correlation_edm, 
+                   type = "upper",
+                   tl.col = "black",
+                   title = "EDM"
+                   )
+
+```
